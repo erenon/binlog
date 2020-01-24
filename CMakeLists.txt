@@ -190,6 +190,7 @@ if(Boost_FOUND)
     test/unit/binlog/TestBasicLogMacros.cpp
     test/unit/binlog/TestArrayView.cpp
     test/unit/binlog/TestConstCharPtrIsString.cpp
+    test/unit/binlog/TestEventFilter.cpp
 
     test/unit/binlog/test_utils.cpp
   )
