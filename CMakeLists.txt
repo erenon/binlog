@@ -98,6 +98,13 @@ if(NOT HAS_CLOCK_GETTIME)
   set(HAS_CLOCK_GETTIME 1)
 endif()
 
+# Link Time Optimization (LTO)
+if(POLICY CMP0069)
+  message(STATUS "Use interprocedural optimization")
+  cmake_policy(SET CMP0069 NEW)
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
+
 #---------------------------
 # clang-tidy
 #---------------------------
