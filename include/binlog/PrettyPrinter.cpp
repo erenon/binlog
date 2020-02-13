@@ -19,7 +19,13 @@ namespace {
 // or the full path if no path separator (/ or \) found.
 void printFilename(binlog::detail::OstreamBuffer& out, const std::string& path)
 {
-  const std::size_t i = path.find_last_of("/\\", std::string::npos, 2) + 1;
+  //const std::size_t i = path.find_last_of("/\\", std::string::npos, 2) + 1;
+  std::size_t i = path.size();
+  while (i)
+  {
+    if (path[i] == '/' || path[i] == '\\') { ++i; break; }
+    --i;
+  }
   out.write(path.data() + i, path.size() - i);
 }
 
