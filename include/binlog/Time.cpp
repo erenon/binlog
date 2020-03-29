@@ -4,7 +4,7 @@ namespace binlog {
 
 std::chrono::nanoseconds ticksToNanoseconds(std::uint64_t frequency, std::int64_t ticks)
 {
-  return std::chrono::nanoseconds{ticks * std::nano::den / std::int64_t(frequency)};
+  return std::chrono::nanoseconds{std::uint64_t(double(ticks) * (std::nano::den / double(frequency)))};
 }
 
 std::chrono::nanoseconds clockToNsSinceEpoch(const ClockSync& clockSync, std::uint64_t clockValue)
