@@ -24,6 +24,7 @@
           </div>
           <nav class="nav">
             <a class="nav-link" href="UserGuide.html">UserGuide</a>
+            <a class="nav-link" href="Internals.html">Internals</a>
             <a class="nav-link" href="Mserialize.html">Mserialize</a>
             <a class="nav-link" href="https://github.com/Morgan-Stanley/binlog">GitHub</a>
           </nav>
@@ -38,7 +39,7 @@
 <li><a href="#logging">Logging</a><ul>
 <li><a href="#logging-containers">Logging Containers</a></li>
 <li><a href="#logging-strings">Logging Strings</a></li>
-<li><a href="#logging-pointers">Logging Pointers</a></li>
+<li><a href="#logging-pointers-and-optionals">Logging Pointers and Optionals</a></li>
 <li><a href="#logging-pairs-and-tuples">Logging Pairs and Tuples</a></li>
 <li><a href="#logging-enums">Logging Enums</a></li>
 <li><a href="#logging-user-defined-structures">Logging User Defined Structures</a></li>
@@ -46,6 +47,7 @@
 </li>
 <li><a href="#tools">Tools</a><ul>
 <li><a href="#bread">bread</a></li>
+<li><a href="#brecovery">brecovery</a></li>
 </ul>
 </li>
 <li><a href="#a-more-elaborate-greeting-of-the-world">A More Elaborate Greeting of the World</a></li>
@@ -53,10 +55,13 @@
 <li><a href="#severity-control">Severity Control</a></li>
 <li><a href="#categories">Categories</a></li>
 <li><a href="#consume-logs">Consume Logs</a></li>
+<li><a href="#log-rotation">Log Rotation</a></li>
+<li><a href="#text-output">Text Output</a></li>
+<li><a href="#multiple-output">Multiple Output</a></li>
 </ul>
 </div>
 <h1 id="hello-world"><a class="toclink" href="#hello-world">Hello World</a></h1>
-<pre><code>#include &lt;<a href="https://github.com/Morgan-Stanley/binlog/blob/dev/include/binlog/binlog.hpp">binlog/binlog.hpp</a>&gt;
+<pre><code>#include &lt;binlog/binlog.hpp&gt;
 
 int main()
 {
@@ -130,7 +135,23 @@ BINLOG_INFO("Hello {}!", str);
 </code></pre>
 <p><code>const char*</code> arguments, because of established convention, are assumed to
 point to null terminated strings, therefore logged and displayed accordingly.</p>
-<h2 id="logging-pointers"><a class="toclink" href="#logging-pointers">Logging Pointers</a></h2>
+<p>Unfortunately, sometimes even <code>char*</code> is used to refer to a null terminated string
+(e.g: <a href="https://en.cppreference.com/w/cpp/string/byte/strerror">strerror</a>). Binlog has no way to know whether the passed argument
+is a string (therefore calling <code>strlen</code> on it is safe) or just a pointer to a single character.
+To remain on the safe side, by default, Binlog assumes the latter.
+A few ways to workaround this:</p>
+<ul>
+<li>Use <code>const char*</code>, instead of <code>char*</code>. If <code>char*</code> is given, assign it to a <code>const char*</code> variable before logging</li>
+<li>Make the intent explicit, and wrap <code>char*</code> by <code>string_view</code></li>
+<li>Trade safety for convenience, and make Binlog treat every <code>char*</code> as a string:<pre><code>#include &lt;binlog/char_ptr_is_string.hpp&gt;
+
+char* error = geterror(EBADF);
+BINLOG_INFO("Error: {}", error);
+// Outputs: Error: Bad file descriptor
+</code></pre>
+</li>
+</ul>
+<h2 id="logging-pointers-and-optionals"><a class="toclink" href="#logging-pointers-and-optionals">Logging Pointers and Optionals</a></h2>
 <p>Raw and standard smart pointers pointing to a loggable <code>element_type</code>
 are loggable by default:</p>
 <pre><code>int* ptr = nullptr;
@@ -143,6 +164,15 @@ BINLOG_INFO("Pointers: {} {} {}", ptr, uptr, sptr);
 If the pointer is <em>empty</em> (i.e: it points to no valid object),
 no value is logged, and in the text log it will be shown as <code>{null}</code>.
 Logging of <code>weak_ptr</code> is not supported, those must be <code>.lock()</code>-ed first.</p>
+<p>If C++17 is available, the standard optional with a loggable <code>value_type</code>
+can be made loggable:</p>
+<pre><code>#include &lt;binlog/adapt_stdoptional.hpp&gt; // must be included to log std::optional, requires C++17
+
+std::optional&lt;int&gt; opt(123);
+std::optional&lt;int&gt; emptyOpt;
+BINLOG_INFO("Optionals: {} {}", opt, emptyOpt);
+// Outputs: Optionals: 123 {null}
+</code></pre>
 <p>Aside the standard pointers, any pointer or optional-like type is loggable
 that satisfies the following constraints:</p>
 <ul>
@@ -252,16 +282,41 @@ and writes the text to the standard output.</p>
 <p>The format of the text representation can be customized using command line switches:</p>
 <pre><code>$ bread -f "%S [%d] %n %m (%G:%L)" -d "%m/%d %H:%M:%S.%N" logfile.blog
 </code></pre>
+<p>The events of the logfile can be sorted by their timestamp using <code>-s</code>.
+The complete input is consumed first, then sorted and printed in one go.</p>
+<pre><code>$ bread -s logfile.blog
+</code></pre>
+<p>If no input file is specified, or it is <code>-</code>, <code>bread</code> reads from the standard input,
+acting like a filter that converts a binary log stream to text. This allows reading
+compressed logfiles:</p>
+<pre><code>$ zcat logfile.blog.gz | bread
+</code></pre>
+<p>With piping, a live logfile that is being written by the application can be read,
+even if log rotation is configured:</p>
+<pre><code>$ tail -c0 -F logfile.blog | bread
+</code></pre>
 <p>To customize the output and for further options, see the builtin help:</p>
 <pre><code>$ bread -h
+</code></pre>
+<h2 id="brecovery"><a class="toclink" href="#brecovery">brecovery</a></h2>
+<p>If the application crashes, because of the asynchronous logging employed by
+Binlog, it is possible that the most interesting log events, those directly
+preceding the crash, are still in the intermediate queues, waiting to be
+consumed and flushed to the logfile. The <code>brecovery</code> program takes a coredump
+(memory dump, crash dump, the memory image of the application at the time of the
+crash), searches for metadata and log queues, and writes recovered content to the specified file:</p>
+<pre><code>$ brecovery application.core recovered.blog
+</code></pre>
+<p>The recovered logfile is a binary logfile, that can be read using <code>bread</code>:</p>
+<pre><code>$ bread recovered.blog
 </code></pre>
 <h1 id="a-more-elaborate-greeting-of-the-world"><a class="toclink" href="#a-more-elaborate-greeting-of-the-world">A More Elaborate Greeting of the World</a></h1>
 <p>The first section, <a href="#hello-world">Hello World</a> shows a very simple example,
 where the data flow might not be clear, due to the hidden state,
 which makes the example short. Consider the following, more explicit example:</p>
-<pre><code>#include &lt;<a href="https://github.com/Morgan-Stanley/binlog/blob/dev/include/binlog/Session.hpp">binlog/Session.hpp</a>&gt;
-#include &lt;<a href="https://github.com/Morgan-Stanley/binlog/blob/dev/include/binlog/SessionWriter.hpp">binlog/SessionWriter.hpp</a>&gt;
-#include &lt;<a href="https://github.com/Morgan-Stanley/binlog/blob/dev/include/binlog/advanced_log_macros.hpp">binlog/advanced_log_macros.hpp</a>&gt;
+<pre><code>#include &lt;binlog/Session.hpp&gt;
+#include &lt;binlog/SessionWriter.hpp&gt;
+#include &lt;binlog/advanced_log_macros.hpp&gt;
 
 #include &lt;fstream&gt;
 #include &lt;iostream&gt;
@@ -318,7 +373,7 @@ BINLOG_INFO_W(writer, "Hello named writer");
 <p>It might be desirable to change the verbosity of the logging runtime.
 Setting the minimum severity of the session disables production
 of events with lesser severities:</p>
-<pre><code>#include &lt;<a href="https://github.com/Morgan-Stanley/binlog/blob/dev/include/binlog/Severity.hpp">binlog/Severity.hpp</a>&gt;
+<pre><code>#include &lt;binlog/Severity.hpp&gt;
 
 session.setMinSeverity(binlog::Severity::warning);
 // trace, debug, info severities are disabled
@@ -331,7 +386,7 @@ BINLOG_INFO("Call f: {}", f()); // f will not be called
 <h1 id="categories"><a class="toclink" href="#categories">Categories</a></h1>
 <p>To separate the log events coming from different components of the application,
 a category can be attached to them:</p>
-<pre><code>#include &lt;<a href="https://github.com/Morgan-Stanley/binlog/blob/dev/include/binlog/advanced_log_macros.hpp">binlog/advanced_log_macros.hpp</a>&gt;
+<pre><code>#include &lt;binlog/advanced_log_macros.hpp&gt;
 
 BINLOG_INFO_C(my_category, "This is a categorized event");
 // Outputs: my_category  This is a categorized event
@@ -370,11 +425,99 @@ while (std::getline(std::cin, input))
 </code></pre>
 <p>For different kind of applications, calling <code>consume</code> periodically in a dedicated thread
 or task can be an option.</p>
+<h1 id="log-rotation"><a class="toclink" href="#log-rotation">Log Rotation</a></h1>
+<p><a href="https://en.wikipedia.org/wiki/Log_rotation">Log rotation</a> can be achieved by simply changing the output stream passed to <code>Session::consume</code>.
+<code>Session</code> does not know or care about the underlying device of the stream.
+However, metadata is not added automatically to the new file (as <code>Session</code> does not know
+that a rotation happened). To make the new file self contained (i.e: readable without the
+metadata in the old file), old metadata has to be added via <code>Session::reconsumeMetadata</code>:</p>
+<pre><code>if (std::rename("rotate.blog", "rotate.1.blog") != 0)
+{
+  std::cerr &lt;&lt; "Failed to rename rotate.blog to rotate.1.blog\n";
+  return 2;
+}
+
+logfile.close();
+logfile.open("rotate.blog", std::ofstream::out|std::ofstream::binary);
+
+// Metadata is now moved to rotate.1.blog, rotate.blog is empty.
+// To make rotate.blog stand alone, re-add metadata:
+binlog::default_session().reconsumeMetadata(logfile);
+</code></pre>
+<h1 id="text-output"><a class="toclink" href="#text-output">Text Output</a></h1>
+<p>The key feature of Binlog is producing structured, binary logfiles.
+However, in some cases, writing text output directly might be still desirable.
+This is easy to do using <code>TextOutputStream</code>:</p>
+<pre><code>#include &lt;binlog/TextOutputStream.hpp&gt; // requires binlog library to be linked
+#include &lt;binlog/binlog.hpp&gt;
+
+#include &lt;iostream&gt;
+
+int main()
+{
+  BINLOG_INFO("Hello Text Output!");
+
+  binlog::TextOutputStream output(std::cout);
+  binlog::consume(output);
+
+  return 0;
+}
+</code></pre>
+<p><code>TextOutputStream</code> requires the Binlog library to be linked to the application.</p>
+<h1 id="multiple-output"><a class="toclink" href="#multiple-output">Multiple Output</a></h1>
+<p><code>Session::consume</code> takes a single target only, but it is easy to multiplex the log stream
+to produce multiple output streams. With <code>EventFilter</code>, it is possible to route
+different kinds of events to different outputs, efficiently. In this example,
+the complete binary log is written to a logfile, but high severity events are also
+written to the standard error as text:</p>
+<pre><code>#include &lt;binlog/EventFilter.hpp&gt;
+#include &lt;binlog/TextOutputStream.hpp&gt; // requires binlog library to be linked
+
+// Write complete binlog output to `binary`,
+// and also write error and above events to `text` - as text.
+class MultiOutputStream
+{
+public:
+  MultiOutputStream(std::ostream&amp; binary, std::ostream&amp; text)
+    :_binary(binary),
+     _text(text),
+     _filter([](const binlog::EventSource&amp; source) {
+        return source.severity &gt;= binlog::Severity::error;
+     })
+  {}
+
+  MultiOutputStream&amp; write(const char* buffer, std::streamsize size)
+  {
+    _binary.write(buffer, size);
+
+    try
+    {
+      _filter.writeAllowed(buffer, std::size_t(size), _text);
+    }
+    catch (const std::runtime_error&amp; ex)
+    {
+      std::cerr &lt;&lt; "Failed to convert buffer to text: " &lt;&lt; ex.what() &lt;&lt; "\n";
+    }
+
+    return *this;
+  }
+
+private:
+  std::ostream&amp; _binary;
+  binlog::TextOutputStream _text;
+  binlog::EventFilter _filter;
+};
+</code></pre>
+<p>Usage is like before:</p>
+<pre><code>std::ofstream logfile(path, std::ofstream::out|std::ofstream::binary);
+MultiOutputStream output(logfile, std::cerr);
+binlog::consume(output);
+</code></pre>
 
       <hr/>
       <footer class="text-center text-muted">
         Feedback and help: <a href="https://github.com/Morgan-Stanley/binlog/issues">GitHub</a> |
-        Generated: 2019. 12. 17.
+        Generated: 2021. 03. 05.
       </footer>
       <hr/>
     </div>
