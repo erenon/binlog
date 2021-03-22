@@ -102,6 +102,15 @@ bool PrettyPrinter::printStruct(detail::OstreamBuffer& out, mserialize::Visitor:
     return true;
   }
 
+  if (sb.name == "std::chrono::system_clock::time_point" && sb.tag == "`ns'l")
+  {
+    const auto sinceEpoch = std::chrono::nanoseconds{input.read<std::int64_t>()};
+    BrokenDownTime bdt{};
+    nsSinceEpochToBrokenDownTimeUTC(sinceEpoch, bdt);
+    printTime(out, bdt, 0, "UTC");
+    return true;
+  }
+
   return false;
 }
 

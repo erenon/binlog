@@ -193,6 +193,15 @@ see the Mserialize documentation on [Adapting custom types][mserialize-act] and
 [mserialize-act]: Mserialize.html#adapting-custom-types
 [mserialize-rec]: Mserialize.html#adapting-user-defined-recursive-types-for-visitation
 
+## Logging Standard Types
+
+`std::chrono::system_clock::time_point` objects can be logged after adoption by including a header file:
+
+    [catchfile test/integration/LoggingTimePoint.cpp timepoint]
+
+The object is serialized as a single number (nanoseconds since epoch), and pretty printed as a human readable timestamp.
+The pretty printed text representation is in UTC, and can be configured with the `-d` flag when using [bread](#bread).
+
 # Tools
 
 ## bread
