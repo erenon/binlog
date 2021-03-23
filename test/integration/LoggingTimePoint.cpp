@@ -22,6 +22,13 @@ int main()
   // Outputs: Now: 2021-03-16 18:05:02.123456000
   //]
 
+  BINLOG_INFO("Now (seconds): {}", std::chrono::time_point_cast<std::chrono::seconds>(now));
+  // Outputs: Now (seconds): 2021-03-16 18:05:02.000000000
+
+  const std::chrono::system_clock::time_point zero;
+  BINLOG_INFO("Zero: {}", zero);
+  // Outputs: Zero: 1970-01-01 00:00:00.000000000
+
   binlog::consume(std::cout);
   return 0;
 }

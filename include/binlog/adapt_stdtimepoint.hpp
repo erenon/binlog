@@ -10,11 +10,11 @@
 
 namespace mserialize {
 
-template <>
-struct CustomSerializer<std::chrono::system_clock::time_point>
+template <typename Duration>
+struct CustomSerializer<std::chrono::time_point<std::chrono::system_clock, Duration>>
 {
   template <typename OutputStream>
-  static void serialize(const std::chrono::system_clock::time_point tp, OutputStream& ostream)
+  static void serialize(const std::chrono::time_point<std::chrono::system_clock, Duration> tp, OutputStream& ostream)
   {
     const std::int64_t ns = std::chrono::duration_cast<std::chrono::nanoseconds>(tp.time_since_epoch()).count();
     mserialize::serialize(ns, ostream);
@@ -26,8 +26,8 @@ struct CustomSerializer<std::chrono::system_clock::time_point>
   }
 };
 
-template <>
-struct CustomTag<std::chrono::system_clock::time_point>
+template <typename Duration>
+struct CustomTag<std::chrono::time_point<std::chrono::system_clock, Duration>>
 {
   static constexpr auto tag_string()
   {
