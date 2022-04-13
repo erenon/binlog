@@ -22,7 +22,7 @@ jobs:
           set -x
           mkdir Release
           cd Release
-          cmake ..
+          cmake .. -DBINLOG_SOURCE_BROWSER_URL=https://github.com/erenon/binlog/tree/main/include/
           make Documentation
           mkdir doc
           cp ../doc/index.html *.html doc

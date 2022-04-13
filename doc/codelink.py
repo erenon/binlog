@@ -35,7 +35,7 @@ class CodelinkProcessor(Treeprocessor):
 
     def run(self, root):
         prefix = self.config['link_prefix']
-        for elem in root.getiterator('code'):
+        for elem in root.iter('code'):
             code = elem.text.replace('<', '&lt;').replace('>', '&gt;')
             code = self.include.sub(r'#include &lt;<a href="' + prefix + r'\1">\1</a>&gt;', code)
             placeholder = self.md.htmlStash.store(code)
