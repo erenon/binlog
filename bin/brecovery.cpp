@@ -61,7 +61,7 @@ void showHelp()
     "    $ bread recovered.blog\n"
     "\n"
     "Report bugs to:\n"
-    "  https://github.com/Morgan-Stanley/binlog/issues\n";
+    "  https://github.com/erenon/binlog/issues\n";
     ;
 }
 

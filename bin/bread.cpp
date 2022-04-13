@@ -87,7 +87,7 @@ void showHelp()
     "  Default date format string: \"" BINLOG_DEFAULT_DATE_FORMAT "\"\n"
     "\n"
     "Report bugs to:\n"
-    "  https://github.com/Morgan-Stanley/binlog/issues\n";
+    "  https://github.com/erenon/binlog/issues\n";
 }
 
 } // namespace
