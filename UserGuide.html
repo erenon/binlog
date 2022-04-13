@@ -26,7 +26,7 @@
             <a class="nav-link" href="UserGuide.html">UserGuide</a>
             <a class="nav-link" href="Internals.html">Internals</a>
             <a class="nav-link" href="Mserialize.html">Mserialize</a>
-            <a class="nav-link" href="https://github.com/Morgan-Stanley/binlog">GitHub</a>
+            <a class="nav-link" href="https://github.com/erenon/binlog">GitHub</a>
           </nav>
         </div>
       </div>
@@ -70,7 +70,7 @@
 </ul>
 </div>
 <h1 id="hello-world"><a class="toclink" href="#hello-world">Hello World</a></h1>
-<pre><code>#include &lt;binlog/binlog.hpp&gt;
+<pre><code>#include &lt;<a href="https://github.com/erenon/binlog/tree/main/include/binlog/binlog.hpp">binlog/binlog.hpp</a>&gt;
 
 int main()
 {
@@ -152,7 +152,7 @@ A few ways to workaround this:</p>
 <ul>
 <li>Use <code>const char*</code>, instead of <code>char*</code>. If <code>char*</code> is given, assign it to a <code>const char*</code> variable before logging</li>
 <li>Make the intent explicit, and wrap <code>char*</code> by <code>string_view</code></li>
-<li>Trade safety for convenience, and make Binlog treat every <code>char*</code> as a string:<pre><code>#include &lt;binlog/char_ptr_is_string.hpp&gt;
+<li>Trade safety for convenience, and make Binlog treat every <code>char*</code> as a string:<pre><code>#include &lt;<a href="https://github.com/erenon/binlog/tree/main/include/binlog/char_ptr_is_string.hpp">binlog/char_ptr_is_string.hpp</a>&gt;
 
 char* error = geterror(EBADF);
 BINLOG_INFO("Error: {}", error);
@@ -313,7 +313,7 @@ BINLOG_ADAPT_TEMPLATE((typename A, typename B, std::size_t C), (Triplet&lt;A,B,C
 <h2 id="logging-standard-types"><a class="toclink" href="#logging-standard-types">Logging Standard Types</a></h2>
 <h3 id="chrono"><a class="toclink" href="#chrono">chrono</a></h3>
 <p><code>std::chrono::system_clock::time_point</code> objects can be logged after adoption by including a header file:</p>
-<pre><code>#include &lt;binlog/adapt_stdtimepoint.hpp&gt; // must be included to log std::chrono::system_clock::time_point
+<pre><code>#include &lt;<a href="https://github.com/erenon/binlog/tree/main/include/binlog/adapt_stdtimepoint.hpp">binlog/adapt_stdtimepoint.hpp</a>&gt; // must be included to log std::chrono::system_clock::time_point
 
 std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 BINLOG_INFO("Now: {}", now);
@@ -324,7 +324,7 @@ The pretty printed text format is affected by the <code>-d</code> flag when usin
 If <code>%d</code> (localtime) appears first in the <code>-f</code> (format) parameter, the time point is converted to producer-local timezone
 (this is the default). If <code>%u</code> (UTC) appears first, the time point is shown in UTC.</p>
 <p>Certain helper types of <code>std::chrono::duration</code> can be logged after adoption by including a header file:</p>
-<pre><code>#include &lt;binlog/adapt_stdduration.hpp&gt; // must be included to log std::chrono::duration helper types
+<pre><code>#include &lt;<a href="https://github.com/erenon/binlog/tree/main/include/binlog/adapt_stdduration.hpp">binlog/adapt_stdduration.hpp</a>&gt; // must be included to log std::chrono::duration helper types
 
 BINLOG_INFO("{} {} {}", std::chrono::nanoseconds{1}, std::chrono::microseconds{2}, std::chrono::milliseconds{3});
 // Outputs: 1ns 2us 3ms
@@ -333,7 +333,7 @@ BINLOG_INFO("{} {} {}", std::chrono::seconds{4}, std::chrono::minutes{5}, std::c
 </code></pre>
 <h3 id="error_code"><a class="toclink" href="#error_code">error_code</a></h3>
 <p><code>std::error_code</code> objects can be logged after adoption by including a header file:</p>
-<pre><code>#include &lt;binlog/adapt_stderrorcode.hpp&gt; // must be included to log std::error_code
+<pre><code>#include &lt;<a href="https://github.com/erenon/binlog/tree/main/include/binlog/adapt_stderrorcode.hpp">binlog/adapt_stderrorcode.hpp</a>&gt; // must be included to log std::error_code
 
 std::error_code ec;
 BINLOG_INFO("ec: {}", ec);
@@ -342,7 +342,7 @@ BINLOG_INFO("ec: {}", ec);
 <p>The error code is serialized in terms of the <code>message</code> member, therefore it may result in memory allocations.</p>
 <h3 id="optional"><a class="toclink" href="#optional">optional</a></h3>
 <p>If C++17 is available, the standard optional with a loggable <code>value_type</code> can be made loggable:</p>
-<pre><code>#include &lt;binlog/adapt_stdoptional.hpp&gt; // must be included to log std::optional, requires C++17
+<pre><code>#include &lt;<a href="https://github.com/erenon/binlog/tree/main/include/binlog/adapt_stdoptional.hpp">binlog/adapt_stdoptional.hpp</a>&gt; // must be included to log std::optional, requires C++17
 
 std::optional&lt;int&gt; opt(123);
 std::optional&lt;int&gt; emptyOpt;
@@ -351,7 +351,7 @@ BINLOG_INFO("Optionals: {} {}", opt, emptyOpt);
 </code></pre>
 <h3 id="filesystem"><a class="toclink" href="#filesystem">filesystem</a></h3>
 <p>If C++17 is available, standard filesystem types can be made loggable:</p>
-<pre><code>#include &lt;binlog/adapt_stdfilesystem.hpp&gt; // must be included to log std::filesystem types, requires C++17
+<pre><code>#include &lt;<a href="https://github.com/erenon/binlog/tree/main/include/binlog/adapt_stdfilesystem.hpp">binlog/adapt_stdfilesystem.hpp</a>&gt; // must be included to log std::filesystem types, requires C++17
 
 const std::filesystem::path p("/path/to/file");
 BINLOG_INFO("std::filesystem::path: {}", p);
@@ -364,7 +364,7 @@ On platforms where <code>path::value_type</code> is <strong>not</strong> <code>c
 which may result in extra memory allocations.</p>
 <h3 id="variant"><a class="toclink" href="#variant">variant</a></h3>
 <p>If C++17 is available, standard variant types can be made loggable:</p>
-<pre><code>#include &lt;binlog/adapt_stdvariant.hpp&gt; // must be included to log std::variant types, requires C++17
+<pre><code>#include &lt;<a href="https://github.com/erenon/binlog/tree/main/include/binlog/adapt_stdvariant.hpp">binlog/adapt_stdvariant.hpp</a>&gt; // must be included to log std::variant types, requires C++17
 
 std::variant&lt;int, std::string, float&gt; v{"works"};
 std::variant&lt;std::monostate&gt; mono;
@@ -416,9 +416,9 @@ crash), searches for metadata and log queues, and writes recovered content to th
 <p>The first section, <a href="#hello-world">Hello World</a> shows a very simple example,
 where the data flow might not be clear, due to the hidden state,
 which makes the example short. Consider the following, more explicit example:</p>
-<pre><code>#include &lt;binlog/Session.hpp&gt;
-#include &lt;binlog/SessionWriter.hpp&gt;
-#include &lt;binlog/advanced_log_macros.hpp&gt;
+<pre><code>#include &lt;<a href="https://github.com/erenon/binlog/tree/main/include/binlog/Session.hpp">binlog/Session.hpp</a>&gt;
+#include &lt;<a href="https://github.com/erenon/binlog/tree/main/include/binlog/SessionWriter.hpp">binlog/SessionWriter.hpp</a>&gt;
+#include &lt;<a href="https://github.com/erenon/binlog/tree/main/include/binlog/advanced_log_macros.hpp">binlog/advanced_log_macros.hpp</a>&gt;
 
 #include &lt;fstream&gt;
 #include &lt;iostream&gt;
@@ -475,7 +475,7 @@ BINLOG_INFO_W(writer, "Hello named writer");
 <p>It might be desirable to change the verbosity of the logging runtime.
 Setting the minimum severity of the session disables production
 of events with lesser severities:</p>
-<pre><code>#include &lt;binlog/Severity.hpp&gt;
+<pre><code>#include &lt;<a href="https://github.com/erenon/binlog/tree/main/include/binlog/Severity.hpp">binlog/Severity.hpp</a>&gt;
 
 session.setMinSeverity(binlog::Severity::warning);
 // trace, debug, info severities are disabled
@@ -488,7 +488,7 @@ BINLOG_INFO("Call f: {}", f()); // f will not be called
 <h1 id="categories"><a class="toclink" href="#categories">Categories</a></h1>
 <p>To separate the log events coming from different components of the application,
 a category can be attached to them:</p>
-<pre><code>#include &lt;binlog/advanced_log_macros.hpp&gt;
+<pre><code>#include &lt;<a href="https://github.com/erenon/binlog/tree/main/include/binlog/advanced_log_macros.hpp">binlog/advanced_log_macros.hpp</a>&gt;
 
 BINLOG_INFO_C(my_category, "This is a categorized event");
 // Outputs: my_category  This is a categorized event
@@ -550,8 +550,8 @@ binlog::default_session().reconsumeMetadata(logfile);
 <p>The key feature of Binlog is producing structured, binary logfiles.
 However, in some cases, writing text output directly might be still desirable.
 This is easy to do using <code>TextOutputStream</code>:</p>
-<pre><code>#include &lt;binlog/TextOutputStream.hpp&gt; // requires binlog library to be linked
-#include &lt;binlog/binlog.hpp&gt;
+<pre><code>#include &lt;<a href="https://github.com/erenon/binlog/tree/main/include/binlog/TextOutputStream.hpp">binlog/TextOutputStream.hpp</a>&gt; // requires binlog library to be linked
+#include &lt;<a href="https://github.com/erenon/binlog/tree/main/include/binlog/binlog.hpp">binlog/binlog.hpp</a>&gt;
 
 #include &lt;iostream&gt;
 
@@ -572,8 +572,8 @@ to produce multiple output streams. With <code>EventFilter</code>, it is possibl
 different kinds of events to different outputs, efficiently. In this example,
 the complete binary log is written to a logfile, but high severity events are also
 written to the standard error as text:</p>
-<pre><code>#include &lt;binlog/EventFilter.hpp&gt;
-#include &lt;binlog/TextOutputStream.hpp&gt; // requires binlog library to be linked
+<pre><code>#include &lt;<a href="https://github.com/erenon/binlog/tree/main/include/binlog/EventFilter.hpp">binlog/EventFilter.hpp</a>&gt;
+#include &lt;<a href="https://github.com/erenon/binlog/tree/main/include/binlog/TextOutputStream.hpp">binlog/TextOutputStream.hpp</a>&gt; // requires binlog library to be linked
 
 // Write complete binlog output to `binary`,
 // and also write error and above events to `text` - as text.
@@ -636,7 +636,7 @@ The Binlog test suite tests if this requirement holds on a given platform.</p>
 
       <hr/>
       <footer class="text-center text-muted">
-        Feedback and help: <a href="https://github.com/Morgan-Stanley/binlog/issues">GitHub</a> |
+        Feedback and help: <a href="https://github.com/erenon/binlog/issues">GitHub</a> |
         Generated: 2022. 04. 13.
       </footer>
       <hr/>
