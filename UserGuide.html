@@ -308,6 +308,21 @@ struct Triplet
 };
 BINLOG_ADAPT_TEMPLATE((typename A, typename B, std::size_t C), (Triplet&lt;A,B,C&gt;), a, b, c)
 </code></pre>
+<p>As of C++20, concepts can be also adapted for logging (namespaced concepts are also supported):</p>
+<pre><code>template&lt;typename T&gt;
+concept Stringable = requires(T a)
+{
+  { a.str() } -&gt; std::convertible_to&lt;std::string&gt;;
+};
+
+BINLOG_ADAPT_CONCEPT(Stringable, str)
+
+struct Foo {
+  std::string str() const { return "bar"; }
+};
+BINLOG_INFO("{}", Foo{});
+// Outputs: Stringable{ str: bar }
+</code></pre>
 <p>For more information see the Mserialize documentation on <a href="Mserialize.html#adapting-custom-types">Adapting custom types</a> and
 <a href="Mserialize.html#adapting-user-defined-recursive-types-for-visitation">Adapting user defined recursive types for visitation</a>.</p>
 <h2 id="logging-standard-types"><a class="toclink" href="#logging-standard-types">Logging Standard Types</a></h2>
@@ -637,7 +652,7 @@ The Binlog test suite tests if this requirement holds on a given platform.</p>
       <hr/>
       <footer class="text-center text-muted">
         Feedback and help: <a href="https://github.com/erenon/binlog/issues">GitHub</a> |
-        Generated: 2022. 04. 13.
+        Generated: 2023. 03. 03.
       </footer>
       <hr/>
     </div>
