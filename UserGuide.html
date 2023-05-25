@@ -410,7 +410,7 @@ compressed logfiles:</p>
 </code></pre>
 <p>With piping, a live logfile that is being written by the application can be read,
 even if log rotation is configured:</p>
-<pre><code>$ tail -c0 -F logfile.blog | bread
+<pre><code>$ tail -c +0 -F logfile.blog | bread
 </code></pre>
 <p>To customize the output and for further options, see the builtin help:</p>
 <pre><code>$ bread -h
@@ -652,7 +652,7 @@ The Binlog test suite tests if this requirement holds on a given platform.</p>
       <hr/>
       <footer class="text-center text-muted">
         Feedback and help: <a href="https://github.com/erenon/binlog/issues">GitHub</a> |
-        Generated: 2023. 03. 03.
+        Generated: 2023. 05. 25.
       </footer>
       <hr/>
     </div>
